@@ -1,0 +1,386 @@
+package Trabalho_Flavio_A3;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Scanner;
+
+public class GerenciadorDeArquivos {
+
+    // Scanner estático para evitar múltiplas instâncias e garantir que seja fechado apenas uma vez.
+    private static Scanner scanner = new Scanner(System.in);
+    // Constante para o nome do arquivo de log.
+    private static final String LOG_FILE = "log.txt";
+
+    public static void main(String[] args) {
+        // Cria uma instância da classe para chamar os métodos não estáticos.
+        GerenciadorDeArquivos gerenciador = new GerenciadorDeArquivos();
+        int opcao;
+        do {
+            // Exibe o menu e obtém a opção do usuário.
+            opcao = gerenciador.exibirMenu();
+            // Executa a operação correspondente à opção escolhida.
+            gerenciador.executarOpcao(opcao);
+        } while (opcao != 8); // O loop continua até que o usuário escolha a opção "Sair" (8).
+        scanner.close(); // Fecha o scanner para liberar recursos.
+    }
+
+    /**
+     * Exibe o menu de opções para o usuário e lê a escolha.
+     * Garante que a entrada seja um número inteiro válido.
+     * @return A opção escolhida pelo usuário.
+     */
+    private int exibirMenu() {
+        System.out.println("\n--- MENU ---");
+        System.out.println("[1] Abrir arquivo");
+        System.out.println("[2] Renomear arquivo");
+        System.out.println("[3] Mover arquivo");
+        System.out.println("[4] Copiar arquivo");
+        System.out.println("[5] Excluir arquivo");
+        System.out.println("[6] Criar arquivo");
+        System.out.println("[7] Mostrar Uso de Memória"); // Nova opção para exibir o uso de memória
+        System.out.println("[8] Sair"); // Opção de saída atualizada
+        System.out.print("Escolha a opção: ");
+        while (!scanner.hasNextInt()) {
+            System.out.println("Entrada inválida. Por favor, digite um número.");
+            scanner.next(); // Consome a entrada inválida para evitar loop infinito.
+            System.out.print("Escolha a opção: ");
+        }
+        int opcao = scanner.nextInt();
+        scanner.nextLine(); // Consome a quebra de linha pendente após a leitura do inteiro.
+        return opcao;
+    }
+
+    /**
+     * Executa a operação correspondente à opção fornecida pelo usuário.
+     * @param opcao A opção numérica escolhida pelo usuário.
+     */
+    private void executarOpcao(int opcao) {
+        switch (opcao) {
+            case 1:
+                abrirArquivo();
+                break;
+            case 2:
+                renomearArquivo();
+                break;
+            case 3:
+                moverArquivo();
+                break;
+            case 4:
+                copiarArquivo();
+                break;
+            case 5:
+                excluirArquivo();
+                break;
+            case 6:
+                criarArquivo();
+                break;
+            case 7:
+                mostrarUsoDeMemoria(); // Chama o novo método para exibir o uso de memória.
+                break;
+            case 8:
+                System.out.println("Saindo do programa...");
+                break;
+            default:
+                System.out.println("Opção inválida. Por favor, escolha uma opção válida.");
+        }
+    }
+
+    /**
+     * Solicita ao usuário o caminho de um arquivo e verifica se ele existe.
+     */
+    private void abrirArquivo() {
+        System.out.print("Digite o caminho do arquivo para abrir: ");
+        String caminhoAbrir = scanner.nextLine();
+        File arquivoAbrir = new File(caminhoAbrir);
+        if (arquivoAbrir.exists()) {
+            System.out.println("Arquivo encontrado: " + arquivoAbrir.getAbsolutePath());
+            salvarAcao("Arquivo aberto: " + caminhoAbrir);
+            // Aqui você pode adicionar código para ler o conteúdo do arquivo, se necessário.
+            // Por exemplo:
+            // try (BufferedReader reader = new BufferedReader(new FileReader(arquivoAbrir))) {
+            //     String linha;
+            //     System.out.println("\nConteúdo do arquivo:");
+            //     while ((linha = reader.readLine()) != null) {
+            //         System.out.println(linha);
+            //     }
+            // } catch (IOException e) {
+            //     System.out.println("Erro ao ler o arquivo: " + e.getMessage());
+            // }
+        } else {
+            System.out.println("Arquivo não encontrado.");
+        }
+    }
+
+    /**
+     * Solicita ao usuário o caminho original e o novo nome para um arquivo/diretório,
+     * e então chama o método de renomeação.
+     */
+    private void renomearArquivo() {
+        System.out.print("Digite o caminho completo do arquivo/diretório a ser renomeado: ");
+        String caminhoOriginalRenomear = scanner.nextLine();
+        System.out.print("Digite o novo nome (apenas o nome do arquivo/diretório, sem caminho): ");
+        String novoNome = scanner.nextLine();
+        renomearArquivo(caminhoOriginalRenomear, novoNome);
+        salvarAcao("Arquivo/diretório renomeado: " + caminhoOriginalRenomear + " para " + novoNome);
+    }
+
+    /**
+     * Solicita ao usuário o caminho de origem e o caminho de destino para mover um arquivo/diretório,
+     * e então chama o método de movimentação.
+     */
+    private void moverArquivo() {
+        System.out.print("Digite o caminho completo do arquivo/diretório de origem para mover: ");
+        String caminhoOrigemMover = scanner.nextLine();
+        System.out.print("Digite o caminho completo do diretório de destino (incluindo o novo nome se desejar renomear): ");
+        String caminhoDestinoMover = scanner.nextLine();
+        moverArquivo(caminhoOrigemMover, caminhoDestinoMover);
+        salvarAcao("Arquivo/diretório movido: " + caminhoOrigemMover + " para " + caminhoDestinoMover);
+    }
+
+    /**
+     * Solicita ao usuário o caminho de origem e o caminho de destino para copiar um arquivo,
+     * e então chama o método de cópia.
+     */
+    private void copiarArquivo() {
+        System.out.print("Digite o caminho completo do arquivo de origem para copiar: ");
+        String caminhoOrigemCopiar = scanner.nextLine();
+        System.out.print("Digite o caminho completo do destino da cópia (incluindo o nome para a cópia): ");
+        String caminhoDestinoCopiar = scanner.nextLine();
+        copiarArquivo(caminhoOrigemCopiar, caminhoDestinoCopiar);
+        salvarAcao("Arquivo copiado: " + caminhoOrigemCopiar + " para " + caminhoDestinoCopiar);
+    }
+
+    /**
+     * Solicita ao usuário o caminho de um arquivo/diretório a ser excluído,
+     * e então chama o método de exclusão.
+     */
+    private void excluirArquivo() {
+        System.out.print("Digite o caminho completo do arquivo/diretório a ser excluído: ");
+        String caminhoExcluir = scanner.nextLine();
+        excluirArquivo(caminhoExcluir);
+        salvarAcao("Arquivo/diretório excluído: " + caminhoExcluir);
+    }
+
+    /**
+     * Solicita ao usuário o caminho e o nome do arquivo a ser criado,
+     * e então chama o método de criação.
+     */
+    private void criarArquivo() {
+        System.out.print("Digite o caminho completo e o nome do arquivo a ser criado: ");
+        String caminhoCriar = scanner.nextLine();
+        criarArquivo(caminhoCriar);
+        salvarAcao("Arquivo criado: " + caminhoCriar);
+    }
+
+    /**
+     * Renomeia um arquivo ou diretório.
+     * @param caminho O caminho completo do arquivo/diretório a ser renomeado.
+     * @param novoNome O novo nome para o arquivo/diretório (apenas o nome, sem caminho).
+     */
+    public void renomearArquivo(String caminho, String novoNome) {
+        try {
+            File arquivo = new File(caminho);
+            if (arquivo.exists()) {
+                File novoArquivo = new File(arquivo.getParent(), novoNome);
+                if (arquivo.renameTo(novoArquivo)) {
+                    System.out.println("Arquivo ou pasta renomeado com sucesso de '" + caminho + "' para '" + novoNome + "'");
+                } else {
+                    System.out.println("Erro ao renomear arquivo ou pasta. Verifique permissões ou se o novo nome já existe.");
+                }
+            } else {
+                System.out.println("Arquivo ou pasta não encontrado: " + caminho);
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao renomear arquivo ou pasta: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Move um arquivo ou diretório de um local para outro.
+     * @param origem O caminho completo do arquivo/diretório de origem.
+     * @param destino O caminho completo do novo local, incluindo o nome do arquivo/diretório.
+     */
+    public void moverArquivo(String origem, String destino) {
+        try {
+            File arquivoOrigem = new File(origem);
+            File arquivoDestino = new File(destino);
+
+            if (arquivoOrigem.exists()) {
+                // Garante que o diretório de destino exista.
+                if (arquivoDestino.getParentFile() != null && !arquivoDestino.getParentFile().exists()) {
+                    if (arquivoDestino.getParentFile().mkdirs()) { // Cria os diretórios pai se não existirem.
+                        System.out.println("Diretórios de destino criados: " + arquivoDestino.getParentFile().getAbsolutePath());
+                    } else {
+                        System.out.println("Atenção: Não foi possível criar os diretórios de destino. Tentando mover assim mesmo.");
+                    }
+                }
+
+                if (arquivoOrigem.renameTo(arquivoDestino)) {
+                    System.out.println("Arquivo movido com sucesso de '" + origem + "' para '" + destino + "'");
+                } else {
+                    // Se renameTo falhar (ex: entre diferentes sistemas de arquivos), tenta copiar e depois deletar.
+                    System.out.println("Erro ao mover o arquivo diretamente. Tentando copiar e deletar...");
+                    copiarArquivo(origem, destino); // Tenta copiar.
+                    if (new File(destino).exists()) { // Se a cópia foi bem-sucedida.
+                        if (arquivoOrigem.delete()) { // Tenta deletar o original.
+                            System.out.println("Arquivo original excluído após cópia bem-sucedida.");
+                        } else {
+                            System.out.println("Erro ao excluir arquivo original após cópia. O arquivo pode existir em ambos os locais.");
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Arquivo de origem não encontrado: " + origem);
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao mover o arquivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Copia um arquivo de um local para outro.
+     * @param origem O caminho completo do arquivo de origem.
+     * @param destino O caminho completo do destino da cópia (incluindo o nome para a cópia).
+     */
+    public void copiarArquivo(String origem, String destino) {
+        try (
+            InputStream in = new FileInputStream(origem);
+            OutputStream out = new FileOutputStream(destino)
+        ) {
+            File arquivoOrigem = new File(origem);
+            if (!arquivoOrigem.exists()) {
+                System.out.println("Arquivo de origem para cópia não encontrado: " + origem);
+                return;
+            }
+
+            // Garante que o diretório de destino exista.
+            File arquivoDestino = new File(destino);
+            if (arquivoDestino.getParentFile() != null && !arquivoDestino.getParentFile().exists()) {
+                if (arquivoDestino.getParentFile().mkdirs()) {
+                    System.out.println("Diretórios de destino criados para cópia: " + arquivoDestino.getParentFile().getAbsolutePath());
+                } else {
+                    System.out.println("Atenção: Não foi possível criar os diretórios de destino para cópia. Tentando copiar assim mesmo.");
+                }
+            }
+
+            byte[] buffer = new byte[1024]; // Cria um buffer com espaço para copiar em blocos.
+            int length;
+            // Lê do arquivo de origem e copia para o arquivo destinado.
+            while ((length = in.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
+            }
+            System.out.println("Arquivo copiado com sucesso de '" + origem + "' para '" + destino + "'");
+        } catch (IOException e) {
+            System.out.println("Erro ao copiar o arquivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Exclui um arquivo ou diretório.
+     * @param caminho O caminho completo do arquivo/diretório a ser excluído.
+     */
+    public void excluirArquivo(String caminho) {
+        File arquivo = new File(caminho);
+        if (arquivo.exists()) {
+            if (arquivo.delete()) {
+                System.out.println("Arquivo ou diretório excluído com sucesso: " + caminho);
+            } else {
+                System.out.println("Erro ao excluir arquivo ou diretório. Verifique se não está em uso ou se possui permissões.");
+            }
+        } else {
+            System.out.println("Arquivo ou diretório não encontrado para exclusão: " + caminho);
+        }
+    }
+
+    /**
+     * Cria um novo arquivo vazio.
+     * @param caminho O caminho completo e nome do arquivo a ser criado.
+     */
+    public void criarArquivo(String caminho) {
+        File arquivo = new File(caminho);
+        try {
+            // Garante que o diretório pai exista.
+            if (arquivo.getParentFile() != null && !arquivo.getParentFile().exists()) {
+                if (arquivo.getParentFile().mkdirs()) {
+                    System.out.println("Diretórios pai criados para o novo arquivo: " + arquivo.getParentFile().getAbsolutePath());
+                } else {
+                    System.out.println("Atenção: Não foi possível criar os diretórios pai. Tentando criar o arquivo assim mesmo.");
+                }
+            }
+
+            if (arquivo.createNewFile()) {
+                System.out.println("Arquivo criado com sucesso: " + caminho);
+            } else {
+                System.out.println("Arquivo já existe ou erro ao criar: " + caminho);
+            }
+        } catch (IOException e) {
+            System.out.println("Erro ao criar arquivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Exibe informações sobre o uso de memória da JVM.
+     */
+    private void mostrarUsoDeMemoria() {
+        // Obtém o objeto Runtime associado à aplicação Java atual.
+        Runtime runtime = Runtime.getRuntime();
+
+        // Obtém a quantidade máxima de memória que a máquina virtual Java tentará usar.
+        long memoriaMaxima = runtime.maxMemory();
+
+        // Obtém a quantidade total de memória na máquina virtual Java.
+        long memoriaTotal = runtime.totalMemory();
+
+        // Obtém a quantidade de memória livre na máquina virtual Java.
+        long memoriaLivre = runtime.freeMemory();
+
+        // Calcula a memória utilizada.
+        long memoriaUsada = memoriaTotal - memoriaLivre;
+
+        System.out.println("----- Uso de Memória (JVM) -----");
+        System.out.println("Memória Máxima (bytes): " + memoriaMaxima);
+        System.out.println("Memória Total (bytes): " + memoriaTotal);
+        System.out.println("Memória Livre (bytes): " + memoriaLivre);
+        System.out.println("Memória Usada (bytes): " + memoriaUsada);
+
+        // Converte bytes para megabytes para facilitar a leitura.
+        long memoriaMaximaMB = bytesParaMegabytes(memoriaMaxima);
+        long memoriaTotalMB = bytesParaMegabytes(memoriaTotal);
+        long memoriaLivreMB = bytesParaMegabytes(memoriaLivre);
+        long memoriaUsadaMB = bytesParaMegabytes(memoriaUsada);
+
+        System.out.println("\n----- Uso de Memória (JVM) (MB) -----");
+        System.out.println("Memória Máxima (MB): " + memoriaMaximaMB);
+        System.out.println("Memória Total (MB): " + memoriaTotalMB);
+        System.out.println("Memória Livre (MB): " + memoriaLivreMB);
+        System.out.println("Memória Usada (MB): " + memoriaUsadaMB);
+        salvarAcao("Uso de memória exibido.");
+    }
+
+    /**
+     * Converte um valor de bytes para megabytes.
+     * @param bytes O valor em bytes a ser convertido.
+     * @return O valor em megabytes.
+     */
+    private static long bytesParaMegabytes(long bytes) {
+        return bytes / (1024 * 1024);
+    }
+
+    /**
+     * Salva uma ação no arquivo de log.
+     * @param acao A string que descreve a ação a ser logada.
+     */
+    public void salvarAcao(String acao) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(LOG_FILE, true))) {
+            writer.println(acao);
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar ação no log: " + e.getMessage());
+        }
+    }
+}
